@@ -13,7 +13,7 @@ repos:
    rev: v0.0.165
    hooks:
    -   id: ruff
-       args: [ --select I001 --fix]
+       args: [ --select , I001 ,--fix]
 -   repo: https://github.com/asottile/add-trailing-comma
     rev: v2.3.0
     hooks:
