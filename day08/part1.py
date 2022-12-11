@@ -10,9 +10,9 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), "input.txt")
 
 
 def compute(s: str) -> int | None:
-    size = len(s.split("\n")[0]) - 2  # Sub matrix size
-    total = 4 * (size + 1)
     tree_matrix = np.array([list(line) for line in s.splitlines()])
+    size = len(tree_matrix[0]) - 2  # Sub matrix size
+    total = 4 * (size + 1)
     visible_mat = [[False for _ in range(size)] for _ in range(size)]
 
     for i, line in enumerate(tree_matrix[1:-1]):  # Horizontal scan
