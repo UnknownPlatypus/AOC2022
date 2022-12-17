@@ -6,6 +6,8 @@ from collections import Counter
 
 import pytest
 
+import support
+
 INPUT_TXT = os.path.join(os.path.dirname(__file__), "input.txt")
 
 points = {"A": 1, "B": 2, "C": 3}
@@ -57,7 +59,7 @@ def main() -> int:
     parser.add_argument("data_file", nargs="?", default=INPUT_TXT)
     args = parser.parse_args()
 
-    with open(args.data_file) as f:
+    with open(args.data_file) as f, support.timing():
         print(compute(f.read()))
 
     return 0
