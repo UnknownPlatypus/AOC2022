@@ -16,10 +16,10 @@ def compute(s: str) -> int:
     for n in numbers:
         pass
 
-    lines = s.splitlines()
-    for line in lines:
+    for line in s.splitlines():
         pass
-    # TODO: implement solution here!
+
+    print("\n")
     return tot
 
 
