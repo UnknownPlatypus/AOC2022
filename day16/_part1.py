@@ -4,7 +4,6 @@ import argparse
 import os.path
 import re
 
-import networkx as nx
 import pytest
 
 import support
@@ -14,24 +13,53 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), "input.txt")
 reg = re.compile(r"^Valve ([A-Z]{2}) has flow rate=(\d+); tunnel.*valves* (.*)$")
 
 
-def compute(s: str) -> int:
+def compute_bitwise_wizard_stuff(s: str) -> tuple[float, float]:
     tunnels = {}
     rates = {}
-    G = nx.Graph()
-
     for line in s.splitlines():
         parts = reg.match(line)
         assert parts is not None
         valve_name = parts[1]
-        rates[valve_name] = parts[2]
-        tunnels[valve_name] = set(parts[3].split(", "))
+        if parts[2] != "0":
+            rates[valve_name] = int(parts[2])
+        tunnels[valve_name] = parts[3].split(", ")
 
-        for target in tunnels[valve_name]:
-            G.add_edge(valve_name, target, cost=1)
+    I = {x: 1 << i for i, x in enumerate(rates)}  # noqa: E741
+    T = {
+        x: {y: 1 if y in tunnels[x] else float("+inf") for y in tunnels}
+        for x in tunnels
+    }
+    for k in T:
+        for i in T:
+            for j in T:
+                T[i][j] = min(T[i][j], T[i][k] + T[k][j])
 
-    print(G)
-    print(rates, tunnels)
-    return 0
+    def visit(
+        v: str,
+        budget: float,
+        state: int,
+        flow: float,
+        answer: dict[int, float],
+    ) -> dict[int, float]:
+        answer[state] = max(answer.get(state, 0), flow)
+        for u in rates:
+            newbudget = budget - T[v][u] - 1
+            if I[u] & state or newbudget <= 0:
+                continue
+            visit(u, newbudget, state | I[u], flow + newbudget * rates[u], answer)
+        return answer
+
+    total1 = max(visit("AA", 30, 0, 0, {}).values())
+
+    visited2 = visit("AA", 26, 0, 0, {})
+    total2 = max(
+        v1 + v2
+        for k1, v1 in visited2.items()
+        for k2, v2 in visited2.items()
+        if not k1 & k2
+    )
+
+    return total1, total2
 
 
 INPUT_S = """\
@@ -53,8 +81,8 @@ EXPECTED = 1651
     ("input_s", "expected"),
     ((INPUT_S, EXPECTED),),
 )
-def test(input_s: str, expected: int) -> None:
-    assert compute(input_s) == expected
+def test_wizard(input_s: str, expected: int) -> None:
+    assert compute_bitwise_wizard_stuff(input_s) == (1651, 1707)
 
 
 def main() -> int:
@@ -63,7 +91,7 @@ def main() -> int:
     args = parser.parse_args()
 
     with open(args.data_file) as f, support.timing():
-        print(compute(f.read()))
+        print(compute_bitwise_wizard_stuff(f.read()))
 
     return 0
 
