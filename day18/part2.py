@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import itertools
 import os.path
-from typing import Iterator, cast
+from typing import Iterator
 
 import pytest
 
@@ -37,10 +38,9 @@ def surface_total(points: set[tuple[int, int, int]]) -> int:
 def compute(s: str) -> int:
     print("\n")
 
-    points = cast(
-        set[tuple[int, int, int]],
-        {tuple(map(int, line.split(","))) for line in s.splitlines()},
-    )
+    points: set[tuple[int, int, int]] = {
+        tuple(map(int, line.split(","))) for line in s.splitlines()  # type:ignore[misc]
+    }
     tot = surface_total(points)
 
     # Compute min-max accross every axis.
@@ -53,12 +53,16 @@ def compute(s: str) -> int:
     min_z, max_z = min(z_vals), max(z_vals)
 
     # For non lava blocks, check if they are trapped.
-    remaining = {
-        (x, y, z)
-        for x in range(min_x - 1, max_x + 2)
-        for y in range(min_y - 1, max_y + 2)
-        for z in range(min_z - 1, max_z + 2)
-    } - points
+    remaining = (
+        set(
+            itertools.product(
+                range(min_x, max_x + 1),
+                range(min_y, max_y + 1),
+                range(min_z, max_z + 1),
+            ),
+        )
+        - points
+    )
 
     todo = [min(remaining)]
     while todo:
