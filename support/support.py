@@ -10,7 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Generator
+from typing import Generator, Literal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -195,19 +195,24 @@ def parse_numbers_comma(s: str) -> list[int]:
     return [int(x) for x in s.strip().split(",")]
 
 
-def format_coords_hash(coords: set[tuple[int, int]]) -> str:
+def format_coords_hash(coords: set[tuple[int, int]], direction: Literal[1, -1]) -> str:
     min_x = min(x for x, _ in coords)
     max_x = max(x for x, _ in coords)
     min_y = min(y for _, y in coords)
     max_y = max(y for _, y in coords)
+    if direction == -1:
+        min_y, max_y = max_y, min_y
     return "\n".join(
         "".join("#" if (x, y) in coords else " " for x in range(min_x, max_x + 1))
-        for y in range(min_y, max_y + 1)
+        for y in range(min_y, max_y + direction, direction)
     )
 
 
-def print_coords_hash(coords: set[tuple[int, int]]) -> None:
-    print(format_coords_hash(coords))
+def print_coords_hash(
+    coords: set[tuple[int, int]],
+    direction: Literal[1, -1] = 1,
+) -> None:
+    print(format_coords_hash(coords, direction))
 
 
 class Direction4(enum.Enum):
