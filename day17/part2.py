@@ -57,6 +57,42 @@ class Shape:
         )
 
 
+def max_heights(places: set[tuple[int, int]]) -> list[int]:
+    m = [0] * 7
+    for x, y in places:
+        m[x] = max(y, m[x])
+    return m
+
+
+def compute_max_from_cycle(
+    seen: dict[tuple[int, ...], tuple[int, int]],
+    current_state: tuple[int, ...],
+    i: int,
+    max_height: int,
+) -> int:
+    """We found a cycle when adding rocks.
+
+    The total height will be the sum of:
+        - the max_height at the start of the cycle.
+        - the cycle height times (1_000_000_000_000 - start_i) // cycle_len.
+        - the leftover height for the few remaining iteration.
+          (we can infer that from the saved state in seen)
+    """
+    start_i, start_max_height = seen[current_state]
+    cycle_len = i - start_i
+    cycle_height = max_height - start_max_height
+
+    nb_iter_remaining = 1_000_000_000_000 - start_i
+    nb_cycle_iter = nb_iter_remaining // cycle_len
+
+    leftover = nb_iter_remaining % cycle_len
+    leftover_height = (
+        next(height for i, height in seen.values() if i == leftover + start_i - 1)
+        - start_max_height
+    )
+    return start_max_height + nb_cycle_iter * cycle_height + leftover_height
+
+
 def move(
     stale: set[tuple[int, int]],
     shape: Shape,
@@ -75,16 +111,21 @@ def compute(s: str) -> int:
     print("\n")
 
     shapes = itertools.cycle(
-        Shape(support.parse_coords_hash(shape_hash))
-        for shape_hash in SHAPES.split("\n\n")
+        enumerate(
+            Shape(support.parse_coords_hash(shape_hash))
+            for shape_hash in SHAPES.split("\n\n")
+        ),
     )
 
-    wind: itertools.cycle[Literal["<", ">"]] = itertools.cycle(s.strip())  # type: ignore
+    winds: itertools.cycle[tuple[int, Literal["<", ">"]]] = itertools.cycle(enumerate(s.strip()))  # type: ignore
     stale = support.parse_coords_hash("#######")
-    max_height = 0
 
-    for _ in range(2022):
-        shape = next(shapes)
+    max_height = 0
+    top_heights = [0] * 7
+    seen: dict[tuple[int, ...], tuple[int, int]] = {}
+
+    for i in range(20000):
+        shape_id, shape = next(shapes)
         # Each rock appears so that its left edge is two units away from the left wall
         x = 2
         # and its bottom edge is three units above the highest rock in the room.
@@ -92,16 +133,31 @@ def compute(s: str) -> int:
 
         # Move shape until stale
         while True:
-            x = move(stale, shape, x, y, next(wind))
+            wind_id, wind = next(winds)
+            x = move(stale, shape, x, y, wind)
 
             if shape.at(x, y - 1) & stale:
-                stale |= shape.at(x, y)
-                max_height = max(max_height, y)
+                new_stale_shape = shape.at(x, y)
+                stale |= new_stale_shape
+
+                # Find max height for every column with this new stale shape.
+                shape_max_heights = max_heights(new_stale_shape)
+                for x in range(7):
+                    top_heights[x] = max(top_heights[x], shape_max_heights[x])
+                max_height = max(top_heights)
+
+                # Create a normalized state.
+                current_state = (
+                    shape_id,
+                    wind_id,
+                    *(h - max_height for h in top_heights),
+                )
+                if current_state in seen:
+                    return compute_max_from_cycle(seen, current_state, i, max_height)
+                seen[current_state] = (i, max_height)
                 break
             else:
                 y -= 1
-        # print(_, shape)
-        # support.print_coords_hash(stale, -1)
 
     return max_height
 
@@ -109,7 +165,7 @@ def compute(s: str) -> int:
 INPUT_S = """\
 >>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
 """
-EXPECTED = 3068
+EXPECTED = 1514285714288
 
 
 @pytest.mark.parametrize(
