@@ -15,10 +15,13 @@ INPUT_TXT = os.path.join(os.path.dirname(__file__), "input.txt")
 def compute(s: str) -> int:
     print("\n")
 
-    numbers: list[tuple[int, int]] = list(enumerate(map(int, s.splitlines())))
+    numbers: list[tuple[int, int]] = list(
+        enumerate(int(x) * 811589153 for x in s.splitlines()),
+    )
     deck = deque(numbers)  # Enumerate to prevent duplicate.
-    for i, n in numbers:
-        move(deck, (i, n))
+    for _ in range(10):
+        for i, n in numbers:
+            move(deck, (i, n))
 
     zero_idx = deck.index((mock.ANY, 0))
 
@@ -43,7 +46,7 @@ INPUT_S = """\
 0
 4
 """
-EXPECTED = 3
+EXPECTED = 1623178306
 
 
 @pytest.mark.parametrize(
