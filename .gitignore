@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+pypy3.9-v7.3.10-linux64
 # C extensions
 *.so
 
