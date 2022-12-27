@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import collections
+import math
 import os.path
 import re
 from typing import NamedTuple
@@ -77,17 +78,17 @@ def compute_one(items: re.Match) -> int:
         ) = state
         new_depth = depth + 1
 
-        if new_depth == 25:
+        if new_depth == 33:
             best_nb_geo = max(best_nb_geo, nb_geo)
 
-        nb_ore = min(max_ore * (24 - depth), nb_ore)
-        nb_clay = min(cost.obs_bot_cla * (24 - depth), nb_clay)
-        nb_obs = min(cost.geo_bot_obs * (24 - depth), nb_obs)
+        nb_ore = min(max_ore * (32 - depth), nb_ore)
+        nb_clay = min(cost.obs_bot_cla * (32 - depth), nb_clay)
+        nb_obs = min(cost.geo_bot_obs * (32 - depth), nb_obs)
         nb_ore_b = min(nb_ore_b, max_ore)
         nb_clay_b = min(nb_clay_b, cost.obs_bot_cla)
         nb_obs_b = min(nb_obs_b, cost.geo_bot_obs)
 
-        if state in seen or new_depth == 25:
+        if state in seen or new_depth == 33:
             continue
         else:
             seen.add(state)
@@ -179,9 +180,9 @@ def compute_one(items: re.Match) -> int:
 
 
 def compute(s: str) -> int:
-    return sum(
-        i * compute_one(reg.match(line))  # type: ignore
-        for i, line in enumerate(s.splitlines(), start=1)
+    return math.prod(
+        compute_one(reg.match(line))  # type: ignore
+        for i, line in enumerate(s.splitlines()[:3], start=1)
     )
 
 
